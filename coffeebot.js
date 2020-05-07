@@ -64,8 +64,8 @@ function joke(){
 function well_then() {
 return ["Don't tell that to coffeebot :( Just keep it to yourself okay?",
         "Don't let coffeebot tell you how to lead your life, you just follow your heart, okay?",
-        "Me either. Just drink some other liquid",
-        "Don't worry, no one can tell what you're drinking over hangouts."
+        "Me either. Just drink some other liquid!",
+        "Don't worry, no one can tell what you're drinking over hangouts!"
       ]
 }
 
@@ -92,29 +92,30 @@ function sendEmails() {
 }, { names: [], timezones: [], emails: [], topics: [] });
     
     const allTopics = uniqify(emailData.topics).join(', ');
-    const allNames = emailData.names.join(' and ');
+    const allNames = emailData.names.join(' & ');
     const allEmails = emailData.emails.join(',');
+    const allTimezones = emailData.timezones.join(', ');
     const subject = `Coffee Time with ${allNames}!`;
     const message = `
 Hey ${allNames}!
 
 You're invited to chat over coffee this week!  
 
-Don't like coffee? $(well_then().Math.floor(Math.random()*well_then().length))
+Don't like coffee? ${well_then()[Math.floor(Math.random()*well_then().length)]}
 
-${names[0]}, could you please take the lead on finding a time that works for everyone?
+${emailData.names[0]}, could you please take the lead on finding a time that works for everyone?
 
-Please mind everyone's timezones: ${timezones}
+Please mind everyone's timezones, which are: ${allTimezones}
 
 What should you talk about? Well that's up to you, but maybe you could talk about: ${allTopics}
 
 P.S.
-$(joke().Math.floor(Math.random()*joke().length))
+${joke()[Math.floor(Math.random()*joke().length)]}
 
 Happy chatting!
 Coffeebot ☕🤖
 `;
 
-    MailApp.sendEmail(allEmails, subject, message);
+MailApp.sendEmail(allEmails, subject, message, {name: "Coffeebot"});
   });
 }
