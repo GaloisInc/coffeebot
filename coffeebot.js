@@ -1,10 +1,23 @@
 const PAIRING_SHEET_NAME = 'Signup';
+const NEXT_PAIRINGS_SHEET_NAME = 'Next Pairings';
 const RECORD_SHEET_NAME = 'Past Pairings';
+const MAX_PAIRING_TRIES = 3;
 
+/**
+ * @description Log error message
+ * @param {string} error message to log
+ */
 function logError(error) {
   Logger.log('ERROR: %s', error);
 }
 
+/**
+ * @description Accessor to get a specific Sheet from our Spreadsheet
+ *              if it is unable to find the requested Sheet, it will
+ *              create one for us
+ * @param {string} name label for sheet needed
+ * @returns {Sheet} Sheet requested or newly created Sheet with given name
+ */
 function getSpreadsheet(name) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = spreadsheet.getSheetByName(name);
@@ -18,6 +31,12 @@ function getSpreadsheet(name) {
   return sheet;
 }
 
+/**
+ * @description Create a new Sheet with given label
+ * @param {Spreadsheet} spreadsheet Spreadsheet we are adding a Sheet to
+ * @param {string} name label to assign to created Sheet
+ * @returns {Sheet} newly created Sheet
+ */
 function createSheet(spreadsheet, name) {
   const sheet = spreadsheet.insertSheet();
 
@@ -26,6 +45,57 @@ function createSheet(spreadsheet, name) {
   return sheet;
 }
 
+/**
+ * @description Fetch data from a given Sheet across a given range
+ * @param {Sheet} sheet Sheet containing data we need
+ * @param {number} startRow index of starting row for data
+ * @param {number} endRow index of ending row
+ * @param {number} startColumn index of starting column
+ * @param {number} endColumn index of ending column
+ * @returns {[][]} list of tuples of spreadsheet data
+ */
+function getSheetValues(sheet, startRow, endRow, startColumn, endColumn) {
+  const numRows = (endRow - startRow) + 1;
+
+  if (numRows === 0) return [];
+
+  const dataRange = sheet.getRange(startRow, startColumn, numRows, endColumn);
+
+  return dataRange.getValues();
+}
+
+/**
+ * @description Generates a list of galwegians, randomly shuffled to use for pairing
+ * @returns {Object<string, string>[]} randomized list of key/value dictionaries representing galwegians
+ */
+function getPairingData() {
+  const sheet = getSpreadsheet(PAIRING_SHEET_NAME);
+  const startRow = 3;
+  const lastRow = sheet.getLastRow();
+  const galwegians = getSheetValues(sheet, startRow, lastRow, 1, 4).map(getMatchData);
+
+  return shuffle(galwegians);
+}
+
+/**
+ * @description Pulls previous pairing information to help minimize repeat pairings
+ * @returns {string[]} list of strings of previous paired email addresses
+ */
+function getPreviousPairings() {
+  const sheet = getSpreadsheet(RECORD_SHEET_NAME);
+  const startRow = 2;
+  const lastRow = sheet.getLastRow();
+
+  return getSheetValues(sheet, startRow, lastRow, 1, 2).reduce((acc, row) => {
+    return acc.concat([row[1].split(',').sort()]);
+    }, []);
+}
+
+/**
+ * @description Randomly shuffle given list
+ * @param {T[]} arr list of items to shuffle
+ * @returns {T[]} input list in randomized ordering
+ */
 function shuffle(arr) {
   const shuffled = arr.slice();
 
@@ -39,30 +109,11 @@ function shuffle(arr) {
   return shuffled;
 }
 
-function matchedIndices(indices) {
-  let thirdWheel = indices.length % 2 ? indices.pop() : null;
-  const halfLength = indices.length / 2;
-
-  const groupA = shuffle(indices.slice(0, halfLength));
-  const groupB = shuffle(indices.slice(halfLength));
-  const matches = groupA.map((e, i) => [e, groupB[i]]);
-
-  if (thirdWheel) {
-    matches[0].push(thirdWheel);
-  }
-
-  return matches;
-}
-
-function getMatchData(row) {
-  return {
-    name: row[0],
-    email: row[1],
-    timezone: row[2],
-    topics: row[3],
-  };
-}
-
+/**
+ * @description Deduplicates list members
+ * @param {T[]} list list of items that should be unique
+ * @returns {T[]} deduplicated list of T
+ */
 function uniqify(list) {
   const seen = {};
   
@@ -76,6 +127,66 @@ function uniqify(list) {
   }, []);
 }
 
+/**
+ * @description Converts tuple representation of galwegian to key/value dictionary
+ * @param {string[]} row tuple representing user to match
+ * @param {string} row.0 name
+ * @param {string} row.1 email
+ * @param {string} row.2 timezone
+ * @param {string} row.3 topics
+ * @returns {Object<string, string>} key/value representation of tuple
+ */
+function getMatchData(row) {
+  return {
+    name: row[0],
+    email: row[1],
+    timezone: row[2] || 'UNKNOWN',
+    topics: row[3] || '',
+  };
+}
+
+/**
+ * @description Strives to create a unique, random pairing of 2-3 galwegians
+ * @param {string[]} prevPairings tuple of emails of previously paired galwegians (@see getPreviousPairings)
+ * @param {Object<string, string>[]} galwegians list of key/value dictionaries of Galwegians to pair (@see getMatchData)
+ * @returns {[string, string][]} list of tuples of email addresses to use in pairing
+ */
+function randomUniquePairing(prevPairings, galwegians) {
+  if (galwegians.length <= 3) return [galwegians.map(g => g.email).sort()];
+
+  const findPotentialPair = (poolOfPossiblePairs, userToPair) => {
+    const pairCandidateIndex = Math.floor(Math.random() * poolOfPossiblePairs.length);
+    const pairCandidate = poolOfPossiblePairs[pairCandidateIndex];
+    const potentialPair = [userToPair.email, pairCandidate.email].sort();
+
+    return [pairCandidateIndex, potentialPair];
+  }
+
+  const userToPair = galwegians.slice(0, 1)[0];
+  const poolOfPossiblePairs = galwegians.slice(1);
+
+  let [pairCandidateIndex, potentialPair] = findPotentialPair(poolOfPossiblePairs, userToPair);
+  let numTries = 0;
+
+  while (numTries++ < MAX_PAIRING_TRIES) {
+    if (!prevPairings[potentialPair.toString()]) break;
+
+    [pairCandidateIndex, potentialPair] = findPotentialPair(poolOfPossiblePairs, userToPair);
+  }
+
+  if (prevPairings[potentialPair.toString()]) {
+    logError(`Unable to find a novel pairing for ${potentialPair.toString()}`);
+  }
+
+  const rest = poolOfPossiblePairs.slice(0, pairCandidateIndex).concat(poolOfPossiblePairs.slice(pairCandidateIndex + 1));
+
+  return [potentialPair].concat(randomUniquePairing(prevPairings, rest));
+}
+
+/**
+ * @description Joke generator
+ * @returns {string} A joke
+ */
 function joke(){
   return [
     "Barista: How do you take your coffee?\n Me: Very, very seriously.",
@@ -88,6 +199,10 @@ function joke(){
   ];
 }
 
+/**
+ * @description Alternative to coffee generator
+ * @returns {string} A witty retort
+ */
 function wellThen() {
   return [
     "Don't tell that to coffeebot :( Just keep it to yourself okay?",
@@ -97,12 +212,20 @@ function wellThen() {
   ];
 }
 
+/**
+ * @description generates a string for current date
+ * @returns {string} "YYYY-MM-DD"
+ */
 function generatePairingDate() {
   const today = new Date();
 
-  return `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+  return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
 }
 
+/**
+ * @description Tracks pairings by storing them in Sheet
+ * @param {string[]} emails list of emails of galwegians that were paired
+ */
 function recordPairing(emails) {
   const recordSheet = getSpreadsheet(RECORD_SHEET_NAME);
   const dateOfPairing = generatePairingDate();
@@ -110,6 +233,13 @@ function recordPairing(emails) {
   recordSheet.appendRow([dateOfPairing, emails]);
 }
 
+/**
+ * @description Generates email message to invite galwegians to join in coffeetime with a colleague
+ * @param {string[]} allNames 
+ * @param {string[]} allTimezones 
+ * @param {string[]} allTopics 
+ * @returns {string} email message
+ */
 function generateEmail(allNames, allTimezones, allTopics) {
   return `
 Hey ${allNames}!
@@ -130,8 +260,43 @@ Coffeebot ☕🤖
 `;
 }
 
+/**
+ * @description Records the generated pairings for use in upcoming coffeetime
+ */
+function recordNextPairings(nextPairings) {
+  const nextPairingSheet = getSpreadsheet(NEXT_PAIRINGS_SHEET_NAME);
+
+  nextPairingSheet.clearContents();
+
+  nextPairings.forEach(pairing => {
+    nextPairingSheet.appendRow([pairing.join(',')]);
+  });
+}
+
+/**
+ * @description Fetch the pairings selected for next coffeetime
+ * @returns {string[][]} List of tuples of emails addresses
+ */
+function getNextPairings() {
+  const sheet = getSpreadsheet(NEXT_PAIRINGS_SHEET_NAME);
+  const startRow = 1;
+  const lastRow = sheet.getLastRow();
+
+  return getSheetValues(sheet, startRow, lastRow, 1, 1).reduce((acc, row) => {
+    return acc.concat([row[0].split(',').sort()]);
+    }, []); 
+}
+
+/**
+ * @description Perform pairing of galwegians, record pairings, and send out emails
+ * @param {Object<string, string>[]} pairingData @see getPairingData
+ * @param {string[]} matches @see getPreviousPairings
+ */
 function coffeePairingActivate(pairingData, matches) {
-  const emailData = matches.map(matchIndex => getMatchData(pairingData[matchIndex])).reduce((acc, people) => {
+  const emailData = matches.map(email => {
+    const index = pairingData.findIndex(p => p.email === email);
+    return pairingData[index];
+  }).reduce((acc, people) => {
     return {
       names: acc.names.concat(people.name),
       emails: acc.emails.concat(people.email),
@@ -153,16 +318,27 @@ function coffeePairingActivate(pairingData, matches) {
 }
 
 /**
- * Sends emails with data from the current spreadsheet.
+ * @description Seeds the coffeetime pairings for upcoming coffeetime,
+ *              storing them in the "Next Pairings" Sheet
+ */
+function generateNextPairings() {
+    const pairingData = getPairingData();
+    const prevPairings = getPreviousPairings();
+    const nextPairings = randomUniquePairing(prevPairings, pairingData);
+
+    recordNextPairings(nextPairings);
+}
+
+/**
+ * @description Sends emails with data from the current spreadsheet.
  */
 function sendEmails() {
-  const sheet = getSpreadsheet(PAIRING_SHEET_NAME);
-  const startRow = 3;
-  const lastRow = sheet.getLastRow();
-  const numRows = (lastRow - startRow) + 1;
-  const dataRange = sheet.getRange(startRow, 1, numRows, 4);
-  const pairingData = dataRange.getValues();
-  const indices = (new Array(numRows)).fill().map((_,i) => i);
+  try {
+    const pairingData = getPairingData();
+    const nextPairings = getNextPairings();
 
-  matchedIndices(indices).map(matches => coffeePairingActivate(pairingData, matches));
+    nextPairings.map(matches => coffeePairingActivate(pairingData, matches));
+  } catch (e) {
+    logError(e.message);
+  }
 }
