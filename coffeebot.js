@@ -65,16 +65,16 @@ function getSheetValues(sheet, startRow, endRow, startColumn, endColumn) {
 }
 
 /**
- * @description Generates a list of galwegians, randomly shuffled to use for pairing
- * @returns {Object<string, string>[]} randomized list of key/value dictionaries representing galwegians
+ * @description Generates a list of participants, randomly shuffled to use for pairing
+ * @returns {Object<string, string>[]} randomized list of key/value dictionaries representing participants to pair
  */
 function getPairingData() {
   const sheet = getSpreadsheet(PAIRING_SHEET_NAME);
   const startRow = 3;
   const lastRow = sheet.getLastRow();
-  const galwegians = getSheetValues(sheet, startRow, lastRow, 1, 4).map(getMatchData);
+  const participants = getSheetValues(sheet, startRow, lastRow, 1, 4).map(getMatchData);
 
-  return shuffle(galwegians);
+  return shuffle(participants);
 }
 
 /**
@@ -128,7 +128,7 @@ function uniqify(list) {
 }
 
 /**
- * @description Converts tuple representation of galwegian to key/value dictionary
+ * @description Converts tuple representation of participants to key/value dictionary
  * @param {string[]} row tuple representing user to match
  * @param {string} row.0 name
  * @param {string} row.1 email
@@ -146,13 +146,13 @@ function getMatchData(row) {
 }
 
 /**
- * @description Strives to create a unique, random pairing of 2-3 galwegians
- * @param {string[]} prevPairings tuple of emails of previously paired galwegians (@see getPreviousPairings)
- * @param {Object<string, string>[]} galwegians list of key/value dictionaries of Galwegians to pair (@see getMatchData)
+ * @description Strives to create a unique, random pairing of 2-3 people
+ * @param {string[]} prevPairings tuple of emails of previously paired people (@see getPreviousPairings)
+ * @param {Object<string, string>[]} participants list of key/value dictionaries of people to pair (@see getMatchData)
  * @returns {[string, string][]} list of tuples of email addresses to use in pairing
  */
-function randomUniquePairing(prevPairings, galwegians) {
-  if (galwegians.length <= 3) return [galwegians.map(g => g.email).sort()];
+function randomUniquePairing(prevPairings, participants) {
+  if (participants.length <= 3) return [participants.map(g => g.email).sort()];
 
   const findPotentialPair = (poolOfPossiblePairs, userToPair) => {
     const pairCandidateIndex = Math.floor(Math.random() * poolOfPossiblePairs.length);
@@ -162,8 +162,8 @@ function randomUniquePairing(prevPairings, galwegians) {
     return [pairCandidateIndex, potentialPair];
   }
 
-  const userToPair = galwegians.slice(0, 1)[0];
-  const poolOfPossiblePairs = galwegians.slice(1);
+  const userToPair = participants.slice(0, 1)[0];
+  const poolOfPossiblePairs = participants.slice(1);
 
   let [pairCandidateIndex, potentialPair] = findPotentialPair(poolOfPossiblePairs, userToPair);
   let numTries = 0;
@@ -224,7 +224,7 @@ function generatePairingDate() {
 
 /**
  * @description Tracks pairings by storing them in Sheet
- * @param {string[]} emails list of emails of galwegians that were paired
+ * @param {string[]} emails list of emails of participants that were paired
  */
 function recordPairing(emails) {
   const recordSheet = getSpreadsheet(RECORD_SHEET_NAME);
@@ -234,7 +234,7 @@ function recordPairing(emails) {
 }
 
 /**
- * @description Generates email message to invite galwegians to join in coffeetime with a colleague
+ * @description Generates email message to invite participants to join in coffeetime with a colleague
  * @param {string[]} allNames 
  * @param {string[]} allTimezones 
  * @param {string[]} allTopics 
@@ -288,7 +288,7 @@ function getNextPairings() {
 }
 
 /**
- * @description Perform pairing of galwegians, record pairings, and send out emails
+ * @description Perform pairing of participants, record pairings, and send out emails
  * @param {Object<string, string>[]} pairingData @see getPairingData
  * @param {string[]} matches @see getPreviousPairings
  */
@@ -296,12 +296,12 @@ function coffeePairingActivate(pairingData, matches) {
   const emailData = matches.map(email => {
     const index = pairingData.findIndex(p => p.email === email);
     return pairingData[index];
-  }).reduce((acc, people) => {
+  }).reduce((acc, participant) => {
     return {
-      names: acc.names.concat(people.name),
-      emails: acc.emails.concat(people.email),
-      timezones: acc.timezones.concat(people.timezone),
-      topics: acc.topics.concat(people.topics.split(/\s*,\s*/)),
+      names: acc.names.concat(participant.name),
+      emails: acc.emails.concat(participant.email),
+      timezones: acc.timezones.concat(participant.timezone),
+      topics: acc.topics.concat(participant.topics.split(/\s*,\s*/)),
     };
   }, { names: [], timezones: [], emails: [], topics: [] });
     
