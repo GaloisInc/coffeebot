@@ -2,6 +2,7 @@ const PAIRING_SHEET_NAME = 'Signup';
 const NEXT_PAIRINGS_SHEET_NAME = 'Next Pairings';
 const RECORD_SHEET_NAME = 'Past Pairings';
 const MAX_PAIRING_TRIES = 3;
+const EMAIL_SEPARATOR = ',';
 
 /**
  * @description Log error message
@@ -9,6 +10,27 @@ const MAX_PAIRING_TRIES = 3;
  */
 function logError(error) {
   Logger.log('ERROR: %s', error);
+}
+
+/**
+ * @description Get the week of the year (1 offset)
+ * @returns {number} 1-53
+ * @see https://www.epochconverter.com/weeknumbers
+ */
+function getWeekOfYear() {
+  var target  = new Date();
+  var dayNr   = (target.getDay() + 6) % 7;
+
+  target.setDate(target.getDate() - dayNr + 3);
+
+  const firstThursday = target.valueOf();
+
+  target.setMonth(0, 1);
+
+  if (target.getDay() != 4) {
+      target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+  }
+  return 1 + Math.ceil((firstThursday - target) / 604800000);
 }
 
 /**
@@ -52,7 +74,7 @@ function createSheet(spreadsheet, name) {
  * @param {number} endRow index of ending row
  * @param {number} startColumn index of starting column
  * @param {number} endColumn index of ending column
- * @returns {[][]} list of tuples of spreadsheet data
+ * @returns {string[][]} list of tuples of spreadsheet data
  */
 function getSheetValues(sheet, startRow, endRow, startColumn, endColumn) {
   const numRows = (endRow - startRow) + 1;
@@ -65,30 +87,51 @@ function getSheetValues(sheet, startRow, endRow, startColumn, endColumn) {
 }
 
 /**
+ * @description Utility to serialize given emails for storage
+ * @param {string[]} emails 
+ * @returns {string} lexically ordered emails joined by configured separator
+ */
+function serializeEmails(emails) {
+  return emails.sort().join(EMAIL_SEPARATOR);
+}
+
+/**
+ * @description Utility to deserialize emails from storage
+ * @param {string} emails lexically ordered emails joined by configured separator
+ * @returns {string[]} list of emails in lexicographical order
+ */
+function deserializeEmails(emails) {
+  return emails.split(EMAIL_SEPARATOR).sort();
+}
+
+/**
  * @description Generates a list of participants, randomly shuffled to use for pairing
- * @returns {Object<string, string>[]} randomized list of key/value dictionaries representing participants to pair
+ * @returns {Object<string, string>[]} randomized list of key/value dictionaries (@see mapRowDataToPairData) representing participants to pair
  */
 function getPairingData() {
   const sheet = getSpreadsheet(PAIRING_SHEET_NAME);
   const startRow = 3;
   const lastRow = sheet.getLastRow();
-  const participants = getSheetValues(sheet, startRow, lastRow, 1, 4).map(getMatchData);
+  const participants = getSheetValues(sheet, startRow, lastRow, 1, 4).map(mapRowDataToPairData);
+  const weekOfYear = getWeekOfYear();
+  const cadencedParticipants = participants.filter(p => weekOfYear % p.cadence === 0);
 
-  return shuffle(participants);
+  return shuffle(cadencedParticipants);
 }
 
 /**
  * @description Pulls previous pairing information to help minimize repeat pairings
- * @returns {string[]} list of strings of previous paired email addresses
+ * @returns {Set<string>} a Set of lexically ordered, comma-separated email addresses of previous pairings
  */
-function getPreviousPairings() {
+function getPreviousPairingEmails() {
   const sheet = getSpreadsheet(RECORD_SHEET_NAME);
   const startRow = 2;
   const lastRow = sheet.getLastRow();
 
   return getSheetValues(sheet, startRow, lastRow, 1, 2).reduce((acc, row) => {
-    return acc.concat([row[1].split(',').sort()]);
-    }, []);
+    acc.add(row[1]);
+    return acc;
+  }, new Set());
 }
 
 /**
@@ -115,13 +158,13 @@ function shuffle(arr) {
  * @returns {T[]} deduplicated list of T
  */
 function uniqify(list) {
-  const seen = {};
+  const seen = new Set();
   
   return list.reduce((acc, el) => {
-    if (seen[el]) {
+    if (seen.has(el)) {
       return acc;
     } else {
-      seen[el] = true;
+      seen.add(el);
       return acc.concat(el);
     }
   }, []);
@@ -134,48 +177,50 @@ function uniqify(list) {
  * @param {string} row.1 email
  * @param {string} row.2 timezone
  * @param {string} row.3 topics
- * @returns {Object<string, string>} key/value representation of tuple
+ * @returns {Object<string, string|number>} key/value representation of tuple
  */
-function getMatchData(row) {
+function mapRowDataToPairData(row) {
   return {
     name: row[0],
     email: row[1],
     timezone: row[2] || 'UNKNOWN',
-    topics: row[3] || '',
+    cadence: row[3] || 1,
+    topics: row[4] || '',
   };
 }
 
 /**
  * @description Strives to create a unique, random pairing of 2-3 people
- * @param {string[]} prevPairings tuple of emails of previously paired people (@see getPreviousPairings)
- * @param {Object<string, string>[]} participants list of key/value dictionaries of people to pair (@see getMatchData)
- * @returns {[string, string][]} list of tuples of email addresses to use in pairing
+ * @param {Set<string>} prevPairings tuple of emails of previously paired people (@see getPreviousPairings)
+ * @param {Object<string, string>[]} participants list of key/value dictionaries of people to pair (@see mapRowDataToPairData)
+ * @returns {string[][]} list of tuples of email addresses to use in pairing
  */
 function randomUniquePairing(prevPairings, participants) {
-  if (participants.length <= 3) return [participants.map(g => g.email).sort()];
+  if (participants.length <= 3) return [participants.map(p => p.email)];
 
   const findPotentialPair = (poolOfPossiblePairs, userToPair) => {
     const pairCandidateIndex = Math.floor(Math.random() * poolOfPossiblePairs.length);
     const pairCandidate = poolOfPossiblePairs[pairCandidateIndex];
-    const potentialPair = [userToPair.email, pairCandidate.email].sort();
+    const potentialPair = [userToPair.email, pairCandidate.email];
+    const serializedPairingEmails = serializeEmails(potentialPair);
 
-    return [pairCandidateIndex, potentialPair];
+    return [pairCandidateIndex, potentialPair, serializedPairingEmails];
   }
 
-  const userToPair = participants.slice(0, 1)[0];
+  const userToPair = participants[0];
   const poolOfPossiblePairs = participants.slice(1);
 
-  let [pairCandidateIndex, potentialPair] = findPotentialPair(poolOfPossiblePairs, userToPair);
+  let [pairCandidateIndex, potentialPair, serializedPairingEmails] = findPotentialPair(poolOfPossiblePairs, userToPair);
   let numTries = 0;
 
   while (numTries++ < MAX_PAIRING_TRIES) {
-    if (!prevPairings[potentialPair.toString()]) break;
+    if (!prevPairings.has(serializedPairingEmails)) break;
 
-    [pairCandidateIndex, potentialPair] = findPotentialPair(poolOfPossiblePairs, userToPair);
+    [pairCandidateIndex, potentialPair, serializedPairingEmails] = findPotentialPair(poolOfPossiblePairs, userToPair);
   }
 
-  if (prevPairings[potentialPair.toString()]) {
-    logError(`Unable to find a novel pairing for ${potentialPair.toString()}`);
+  if (prevPairings.has(serializedPairingEmails)) {
+    logError(`Unable to find a novel pairing for ${serializedPairingEmails}`);
   }
 
   const rest = poolOfPossiblePairs.slice(0, pairCandidateIndex).concat(poolOfPossiblePairs.slice(pairCandidateIndex + 1));
@@ -185,9 +230,9 @@ function randomUniquePairing(prevPairings, participants) {
 
 /**
  * @description Joke generator
- * @returns {string} A joke
+ * @returns {string} list of coffe jokes
  */
-function joke(){
+function joke() {
   return [
     "Barista: How do you take your coffee?\n Me: Very, very seriously.",
     "Q: Where do birds go for coffee?\nA: To the NESTcafe",
@@ -201,7 +246,7 @@ function joke(){
 
 /**
  * @description Alternative to coffee generator
- * @returns {string} A witty retort
+ * @returns {string[]} list of witty retorts
  */
 function wellThen() {
   return [
@@ -235,9 +280,9 @@ function recordPairing(emails) {
 
 /**
  * @description Generates email message to invite participants to join in coffeetime with a colleague
- * @param {string[]} allNames 
- * @param {string[]} allTimezones 
- * @param {string[]} allTopics 
+ * @param {string} allNames 
+ * @param {string} allTimezones 
+ * @param {string} allTopics 
  * @returns {string} email message
  */
 function generateEmail(allNames, allTimezones, allTopics) {
@@ -262,14 +307,15 @@ Coffeebot ☕🤖
 
 /**
  * @description Records the generated pairings for use in upcoming coffeetime
+ * @param {string[][]} nextPairingEmails list of tuples of emails representing next group of participants to pair for coffee
  */
-function recordNextPairings(nextPairings) {
+function recordNextPairings(nextPairingEmails) {
   const nextPairingSheet = getSpreadsheet(NEXT_PAIRINGS_SHEET_NAME);
 
   nextPairingSheet.clearContents();
 
-  nextPairings.forEach(pairing => {
-    nextPairingSheet.appendRow([pairing.join(',')]);
+  nextPairingEmails.forEach(emails => {
+    nextPairingSheet.appendRow([serializeEmails(emails)]);
   });
 }
 
@@ -277,24 +323,24 @@ function recordNextPairings(nextPairings) {
  * @description Fetch the pairings selected for next coffeetime
  * @returns {string[][]} List of tuples of emails addresses
  */
-function getNextPairings() {
+function getNextPairingMatchupEmails() {
   const sheet = getSpreadsheet(NEXT_PAIRINGS_SHEET_NAME);
   const startRow = 1;
   const lastRow = sheet.getLastRow();
 
   return getSheetValues(sheet, startRow, lastRow, 1, 1).reduce((acc, row) => {
-    return acc.concat([row[0].split(',').sort()]);
-    }, []); 
+    return acc.concat([deserializeEmails(row[0])]);
+  }, []); 
 }
 
 /**
  * @description Perform pairing of participants, record pairings, and send out emails
  * @param {Object<string, string>[]} pairingData @see getPairingData
- * @param {string[]} matches @see getPreviousPairings
+ * @param {string[]} matchups @see getPreviousPairings
  */
-function coffeePairingActivate(pairingData, matches) {
-  const emailData = matches.map(email => {
-    const index = pairingData.findIndex(p => p.email === email);
+function coffeePairingActivate(pairingData, matchups) {
+  const emailData = matchups.map(email => {
+    const index = pairingData.findIndex(participant => participant.email === email);
     return pairingData[index];
   }).reduce((acc, participant) => {
     return {
@@ -307,14 +353,14 @@ function coffeePairingActivate(pairingData, matches) {
     
   const allTopics = uniqify(emailData.topics).join(', ');
   const allNames = emailData.names.join(' & ');
-  const allEmails = emailData.emails.join(',');
   const allTimezones = uniqify(emailData.timezones).join(', ');
+  const allEmails = serializeEmails(emailData.emails);
   const subject = `Coffee Time with ${allNames}!`;
   const message = generateEmail(allNames, allTimezones, allTopics);
 
   recordPairing(allEmails);
 
-  MailApp.sendEmail(allEmails, subject, message, {name: "Coffeebot"});
+  MailApp.sendEmail(allEmails, subject, message, { name: 'Coffeebot' });
 }
 
 /**
@@ -323,8 +369,8 @@ function coffeePairingActivate(pairingData, matches) {
  */
 function generateNextPairings() {
     const pairingData = getPairingData();
-    const prevPairings = getPreviousPairings();
-    const nextPairings = randomUniquePairing(prevPairings, pairingData);
+    const prevPairingEmails = getPreviousPairingEmails();
+    const nextPairings = randomUniquePairing(prevPairingEmails, pairingData);
 
     recordNextPairings(nextPairings);
 }
@@ -335,9 +381,9 @@ function generateNextPairings() {
 function sendEmails() {
   try {
     const pairingData = getPairingData();
-    const nextPairings = getNextPairings();
+    const nextPairingMatchupEmails = getNextPairingMatchupEmails();
 
-    nextPairings.map(matches => coffeePairingActivate(pairingData, matches));
+    nextPairingMatchupEmails.map(emails => coffeePairingActivate(pairingData, emails));
   } catch (e) {
     logError(e.message);
   }
