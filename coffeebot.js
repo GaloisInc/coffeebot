@@ -4,6 +4,14 @@ const RECORD_SHEET_NAME = 'Past Pairings';
 const MAX_PAIRING_TRIES = 3;
 const EMAIL_SEPARATOR = ',';
 
+const PAIRING_COLUMNS_MAP = {
+  NAME: 0,
+  EMAIL: 1,
+  TIMEZONE: 2,
+  CADENCE: 3,
+  TOPICS: 4,
+};
+
 /**
  * @description Log error message
  * @param {string} error message to log
@@ -112,7 +120,7 @@ function getPairingData() {
   const sheet = getSpreadsheet(PAIRING_SHEET_NAME);
   const startRow = 3;
   const lastRow = sheet.getLastRow();
-  const participants = getSheetValues(sheet, startRow, lastRow, 1, 4).map(mapRowDataToPairData);
+  const participants = getSheetValues(sheet, startRow, lastRow, 1, Object.keys(PAIRING_COLUMNS_MAP).length).map(mapRowDataToPairData);
   const weekOfYear = getWeekOfYear();
   const cadencedParticipants = participants.filter(p => weekOfYear % p.cadence === 0);
 
@@ -181,11 +189,11 @@ function uniqify(list) {
  */
 function mapRowDataToPairData(row) {
   return {
-    name: row[0],
-    email: row[1],
-    timezone: row[2] || 'UNKNOWN',
-    cadence: row[3] || 1,
-    topics: row[4] || '',
+    name: row[PAIRING_COLUMNS_MAP.NAME],
+    email: row[PAIRING_COLUMNS_MAP.EMAIL],
+    timezone: row[PAIRING_COLUMNS_MAP.TIMEZONE] || 'UNKNOWN',
+    cadence: row[PAIRING_COLUMNS_MAP.CADENCE] || 1,
+    topics: row[PAIRING_COLUMNS_MAP.TOPICS] || '',
   };
 }
 
