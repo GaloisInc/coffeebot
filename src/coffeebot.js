@@ -26,8 +26,8 @@ function logError(error) {
  * @see https://www.epochconverter.com/weeknumbers
  */
 function getWeekOfYear() {
-  var target  = new Date();
-  var dayNr   = (target.getDay() + 6) % 7;
+  const target  = new Date();
+  const dayNr   = (target.getDay() + 6) % 7;
 
   target.setDate(target.getDate() - dayNr + 3);
 
@@ -38,6 +38,7 @@ function getWeekOfYear() {
   if (target.getDay() != 4) {
       target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
   }
+
   return 1 + Math.ceil((firstThursday - target) / 604800000);
 }
 
@@ -109,7 +110,7 @@ function serializeEmails(emails) {
  * @returns {string[]} list of emails in lexicographical order
  */
 function deserializeEmails(emails) {
-  return emails.split(EMAIL_SEPARATOR).sort();
+  return emails.split(EMAIL_SEPARATOR).filter(e => e.length > 0).sort();
 }
 
 /**
@@ -199,12 +200,13 @@ function mapRowDataToPairData(row) {
 
 /**
  * @description Strives to create a unique, random pairing of 2-3 people
- * @param {Set<string>} prevPairings tuple of emails of previously paired people (@see getPreviousPairings)
+ * @param {Set<string>} prevPairings tuple of emails of previously paired people (@see getPreviousPairingEmails)
  * @param {Object<string, string>[]} participants list of key/value dictionaries of people to pair (@see mapRowDataToPairData)
  * @returns {string[][]} list of tuples of email addresses to use in pairing
  */
 function randomUniquePairing(prevPairings, participants) {
-  if (participants.length <= 3) return [participants.map(p => p.email)];
+  if (participants.length === 0) return [];
+  if (participants.length <= 3)  return [participants.map(p => p.email)];
 
   const findPotentialPair = (poolOfPossiblePairs, userToPair) => {
     const pairCandidateIndex = Math.floor(Math.random() * poolOfPossiblePairs.length);
@@ -396,3 +398,13 @@ function sendEmails() {
     logError(e.message);
   }
 }
+
+module.exports = {
+  deserializeEmails,
+  generateNextPairings,
+  mapRowDataToPairData,
+  randomUniquePairing,
+  sendEmails,
+  serializeEmails,
+  uniqify,
+};

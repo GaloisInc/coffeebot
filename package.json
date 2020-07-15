@@ -1,0 +1,32 @@
+{
+  "name": "coffeebot",
+  "version": "1.0.0",
+  "description": "Simple script to use in Google Sheets to pair up particpants for \"coffeebot\" visit to get to know each other",
+  "private": true,
+  "scripts": {
+    "build": "webpack --env.production",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "watch": "webpack --env.NODE_ENV=development --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab-int.galois.com:anniecherk/coffeebot.git"
+  },
+  "keywords": [
+    "Google App Scripts",
+    "Sheets",
+    "JavaScript",
+    "Remote Social Pairing"
+  ],
+  "author": "Ted Hille <ted@galois.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^26.1.0",
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12"
+  },
+  "dependencies": {
+    "wrapper-webpack-plugin": "^2.1.0"
+  }
+}
