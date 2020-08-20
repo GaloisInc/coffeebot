@@ -50,7 +50,7 @@ Coffeebot expects the sign up sheet to be named "Signup" (spelled exactly that w
 
 Coffeebot runs in two steps to help make it easier to debug in case anything goes wrong. The first step is generating pairings for participants, and the second step is sending emails based on those pairings. We'll need to run each of those two functions. The two functions we need to run show up at the bottom of the list of all functions.
 
-3. Select "generateNextPairings" from the "Run function" secondary drop-down. It is second-to-last in the list.
+3. Select `generateNextPairings` from the "Run function" secondary drop-down. It is second-to-last in the list.
 
 4. You will get a notification reading "Authorization required". 
 
@@ -63,7 +63,7 @@ If you feel uncomfortable granting this script those permissions, you could crea
 
 If there is an even number of people, everyone is paired up in a group of two. If there is an odd number of people, coffeebot creates one group of three in addition to all the pairs.
 
-7. Go back to the script editor, and select "sendEmails" from the "Run function" secondary drop-down. It is last in the list.
+7. Go back to the script editor, and select `sendEmails` from the "Run function" secondary drop-down. It is last in the list.
 
 8. If you replaced the example email addresses with your email address and a friend's email address, both of you should now have an email in your inbox. It looks like this:
 
@@ -95,7 +95,7 @@ If you'd like to run coffeebot automatically at regular intervals, you can set i
 2. Click on the "Current project's trigger" button which looks like a pin with a clock in it. It is to the right of the floppy disk icon, and to the left of the "Run" triangle. This will take you to a new window.
 3. In the "Triggers" window, click on the "create a new trigger" button, which should be right under the magnifying glass in the middle of the page. This will pop up a window with a few dropdown menus.
 4. Configure the dropdowns:
-    1. "function to run" should be "generateNextPairings"
+    1. "function to run" should be `generateNextPairings`
     2. leave "which deployment should run" as is
     3. "select event source" should be "Time-driven". Selecting this option will reveal some additional fields. 
     4. "select type of time based trigger". Set this to however often you want to run coffeebot (ie "week timer").
@@ -103,5 +103,5 @@ If you'd like to run coffeebot automatically at regular intervals, you can set i
         You can set it to run at some day / time in the near future to test the functionality, and then reset it to whichever date and time you truly want to use.
     6. You can leave "failure notification settings" as is, or set it to "Notify me immediately".
     7. Hit "Save" to create the trigger.
-5. Hit the "+ Add Trigger" button in the lower right, and repeat step 4, but for the "sendEmails" function. Be sure to schedule the "sendEmails" function to run at a time later than the "generateNextPairings" function.
+5. Hit the "+ Add Trigger" button in the lower right, and repeat step 4, but for the "sendEmails" function. Be sure to schedule the `sendEmails` function to run at a time later than the `generateNextPairings` function.
 
