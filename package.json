@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "build": "webpack --env.production",
+    "build:dev": "webpack --env.NODE_ENV=development",
     "test": "jest",
     "test:watch": "jest --watch",
     "watch": "webpack --env.NODE_ENV=development --watch"
