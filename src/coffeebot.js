@@ -9,8 +9,9 @@ const PAIRING_COLUMNS_MAP = {
   NAME: 0,
   EMAIL: 1,
   TIMEZONE: 2,
-  CADENCE: 3,
-  TOPICS: 4,
+  SNOOZE: 3,
+  CADENCE: 4,
+  TOPICS: 5,
 };
 
 /**
@@ -156,7 +157,8 @@ function getPairingData() {
   const lastRow = sheet.getLastRow();
   const participants = getSheetValues(sheet, startRow, lastRow, 1, Object.keys(PAIRING_COLUMNS_MAP).length).map(mapRowDataToPairData);
   const weekOfYear = getWeekOfYear();
-  const cadencedParticipants = participants.filter(p => weekOfYear % p.cadence === 0);
+  const today = getToday();
+  const cadencedParticipants = participants.filter(p => weekOfYear % p.cadence === 0).filter(p => !shouldSnooze(today, p.snooze));
 
   return shuffle(cadencedParticipants);
 }
@@ -223,10 +225,11 @@ function uniqify(list) {
  */
 function mapRowDataToPairData(row) {
   return {
-    name: row[PAIRING_COLUMNS_MAP.NAME],
-    email: row[PAIRING_COLUMNS_MAP.EMAIL],
-    timezone: row[PAIRING_COLUMNS_MAP.TIMEZONE] || 'UNKNOWN',
     cadence: row[PAIRING_COLUMNS_MAP.CADENCE] || 1,
+    email: row[PAIRING_COLUMNS_MAP.EMAIL],
+    name: row[PAIRING_COLUMNS_MAP.NAME],
+    snooze: row[PAIRING_COLUMNS_MAP.SNOOZE] || '',
+    timezone: row[PAIRING_COLUMNS_MAP.TIMEZONE] || 'UNKNOWN',
     topics: row[PAIRING_COLUMNS_MAP.TOPICS] || '',
   };
 }
