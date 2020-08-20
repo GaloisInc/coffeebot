@@ -121,6 +121,32 @@ function deserializeEmails(emails) {
 }
 
 /**
+ * @description Generate date for midnight (UTC-0) for today
+ * @returns {Date}
+ */
+function getToday() {
+  return new Date(generatePairingDate());
+}
+
+/**
+ * @description Determine if we should omit this participant from today's pairing
+ * @param {Date} today - midnight today (UTC-0)
+ * @param {string} snooze - datestring "YYYY/MM/DD" or empty string
+ * @param {boolean}
+ */
+function shouldSnooze(today, snooze) {
+  if (snooze) {
+    const snoozeDate = new Date(snooze);
+
+    return today.getFullYear() <= snoozeDate.getFullYear() &&
+            today.getMonth() <= snoozeDate.getMonth() &&
+            today.getDate() <= snoozeDate.getDate();
+  }
+
+  return false;
+}
+
+/**
  * @description Generates a list of participants, randomly shuffled to use for pairing
  * @returns {Object<string, string>[]} randomized list of key/value dictionaries (@see mapRowDataToPairData) representing participants to pair
  */
@@ -281,7 +307,7 @@ function wellThen() {
 function generatePairingDate() {
   const today = new Date();
 
-  return `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+  return `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate()}`;
 }
 
 /**
@@ -409,9 +435,11 @@ function sendEmails() {
 module.exports = {
   deserializeEmails,
   generateNextPairings,
+  getToday,
   mapRowDataToPairData,
   randomUniquePairing,
   sendEmails,
   serializeEmails,
+  shouldSnooze,
   uniqify,
 };
