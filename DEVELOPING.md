@@ -2,6 +2,14 @@
 
 If you want to do any development on Coffeebot, there are only a few things you should know about. Coffeebot uses [Webpack](https://webpack.js.org/) to allow us to use [CommonJS](http://www.commonjs.org/specs/modules/1.0/) modules so we can both test our code and generate a GoogleSheet-friendly script.
 
+## Installing
+
+In order to get start, be sure you have [Node](https://nodejs.org/en/) and [npm](https://www.npmjs.com/) installed. Once you do, you can run:
+
+```sh
+npm install
+```
+
 ## Running Tests
 
 There are a small set of tests for code not specific to GoogleSheets which you can run by running:
@@ -55,17 +63,17 @@ In order to build a version of Coffeebot to embed in a GoogleSheet, you should s
 npm run build
 ```
 
-This will output `dist/main.js` which will be a minified version of the code.
+This will output `dist/main.js` which will be a human-friendly version of the code.
 
-### Building Human-friendly Version
+### Building Minified Version
 
-The above script generates a minified version of the code. If you would like to have a version that you can actually read and set breakpoints for within the GoogleSheet ScriptTools, then run the following:
+The above script generates a human-friendly version of the code. If you would like to have a version that is as small as possible, then run the following:
 
 ```sh
-npm run build:dev
+npm run build:minified
 ```
 
-This will output `dist/main.js` which will be a human-friendly version of the code.
+This will output `dist/main.js` which will be a minified version of the code.
 
 ### Installing the Script
 
