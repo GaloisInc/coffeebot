@@ -1,8 +1,10 @@
 const {
   deserializeEmails,
+  getToday,
   mapRowDataToPairData,
   randomUniquePairing,
   serializeEmails,
+  shouldSnooze,
   uniqify,
 } = require('../src/coffeebot');
 
@@ -54,12 +56,14 @@ describe('Coffeebot', () => {
         'TEST_NAME',
         'TEST@EMAIL.COM',
         'TEST_TZ',
+        '',
         10,
         'TEST, TOPICS',
       ])).toEqual({
         cadence: 10,
         email: 'TEST@EMAIL.COM',
         name: 'TEST_NAME',
+        snooze: '',
         timezone: 'TEST_TZ',
         topics: 'TEST, TOPICS',
       });
@@ -70,6 +74,7 @@ describe('Coffeebot', () => {
         cadence: 1,
         email: undefined,
         name: undefined,
+        snooze: '',
         timezone: 'UNKNOWN',
         topics: '',
       });
@@ -123,6 +128,50 @@ describe('Coffeebot', () => {
       expect(randomUniquePairing(PREV_PAIRINGS, PARTICIPANTS)).toEqual(
         expect.not.arrayContaining(['bam@gmail.com', 'foo@gmail.com'])
       );
+    });
+  });
+
+  describe('shouldSnooze', () => {
+    let today;
+
+    beforeEach(() => {
+      const now = new Date();
+      today = new Date(now.getFullYear(), now.getDate() === 1 ? now.getMonth() : now.getMonth() + 1, 2);
+    });
+  
+    afterEach(() => {
+      jest.spyOn(global.Math, 'random').mockRestore();
+    });
+    beforeEach(() => {
+      today = getToday();
+    });
+
+    it('should not snooze if no snooze date', () => {
+      expect(shouldSnooze(today, '')).toEqual(false);
+    });
+
+    it('should not snooze if snooze date was in a previous year', () => {
+      expect(shouldSnooze(today, '2019-01-01')).toEqual(false);
+    });
+
+    it('should not snooze if snooze date was in a previous month', () => {
+      const snooze = `${today.getFullYear()}/${today.getMonth()}/01`; // NOTE: Date.getMonth returns zero-indexed month
+      expect(shouldSnooze(today, snooze)).toEqual(false);
+    });
+
+    it('should not snooze if snooze date is before today', () => {
+      const snooze = `${today.getFullYear()}/${today.getMonth() + 1}/${today.getDate() - 1}`;
+      expect(shouldSnooze(today, snooze)).toEqual(false);
+    });
+
+    it('should snooze if snooze is for today', () => {
+      const snooze = `${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()}`;
+      expect(shouldSnooze(today, snooze)).toEqual(true);
+    });
+
+    it('should snooze if snooze if for tomorrow', () => {
+      const snooze = `${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()+1}`;
+      expect(shouldSnooze(today, snooze)).toEqual(true);
     });
   });
 });
