@@ -1,6 +1,7 @@
 const PAIRING_SHEET_NAME = 'Signup';
 const NEXT_PAIRINGS_SHEET_NAME = 'Next Pairings';
 const RECORD_SHEET_NAME = 'Past Pairings';
+const RECORD_SHEET_HEADINGS = ['Pairing Date', 'Paired Emails']
 const MAX_PAIRING_TRIES = 3;
 const EMAIL_SEPARATOR = ',';
 
@@ -49,14 +50,20 @@ function getWeekOfYear() {
  * @param {string} name label for sheet needed
  * @returns {Sheet} Sheet requested or newly created Sheet with given name
  */
-function getSpreadsheet(name) {
+function getSpreadsheet(name, headings=[]) {
   const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = spreadsheet.getSheetByName(name);
 
   if (!sheet) {
     logError(`Unable to find sheet "${name}", creating one`);
 
-    return createSheet(spreadsheet, name);
+    const newSheet = createSheet(spreadsheet, name);
+
+    if (headings.length > 0) {
+      newSheet.appendRow(headings);
+    }
+
+    return newSheet;
   }
 
   return sheet;
@@ -133,7 +140,7 @@ function getPairingData() {
  * @returns {Set<string>} a Set of lexically ordered, comma-separated email addresses of previous pairings
  */
 function getPreviousPairingEmails() {
-  const sheet = getSpreadsheet(RECORD_SHEET_NAME);
+  const sheet = getSpreadsheet(RECORD_SHEET_NAME, RECORD_SHEET_HEADINGS);
   const startRow = 2;
   const lastRow = sheet.getLastRow();
 
