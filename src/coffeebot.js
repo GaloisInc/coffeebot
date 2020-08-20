@@ -148,12 +148,19 @@ function shouldSnooze(today, snooze) {
 }
 
 /**
+ * @description Gets the "Signup" column headings in correct order
+ */
+function getSignupSheetColumns() {
+  return Object.keys(PAIRING_COLUMNS_MAP).sort((a, b) => PAIRING_COLUMNS_MAP[a] - PAIRING_COLUMNS_MAP[b]);
+}
+
+/**
  * @description Generates a list of participants, randomly shuffled to use for pairing
  * @returns {Object<string, string>[]} randomized list of key/value dictionaries (@see mapRowDataToPairData) representing participants to pair
  */
 function getPairingData() {
-  const sheet = getSpreadsheet(PAIRING_SHEET_NAME);
-  const startRow = 3;
+  const sheet = getSpreadsheet(PAIRING_SHEET_NAME, getSignupSheetColumns());
+  const startRow = 2;
   const lastRow = sheet.getLastRow();
   const participants = getSheetValues(sheet, startRow, lastRow, 1, Object.keys(PAIRING_COLUMNS_MAP).length).map(mapRowDataToPairData);
   const weekOfYear = getWeekOfYear();
@@ -410,6 +417,13 @@ function coffeePairingActivate(pairingData, matchups) {
 }
 
 /**
+ * @description Creates initial "Signup" sheet
+ */
+function generateInitialSignupSheet() {
+  getSpreadsheet(PAIRING_SHEET_NAME, getSignupSheetColumns());
+}
+
+/**
  * @description Seeds the coffeetime pairings for upcoming coffeetime,
  *              storing them in the "Next Pairings" Sheet
  */
@@ -437,6 +451,7 @@ function sendEmails() {
 
 module.exports = {
   deserializeEmails,
+  generateInitialSignupSheet,
   generateNextPairings,
   getToday,
   mapRowDataToPairData,

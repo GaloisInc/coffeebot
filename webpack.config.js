@@ -18,6 +18,10 @@ module.exports = env => {
         test: /\.js$/, // only wrap output of bundle files with '.js' extension 
         header: '',
         footer: `
+function setupSignupSheet() {
+  coffeebot.generateInitialSignupSheet();
+}
+
 function generateNextPairings() {
   coffeebot.generateNextPairings();
 }
@@ -25,7 +29,7 @@ function generateNextPairings() {
 function sendEmails() {
   coffeebot.sendEmails();
 }
-        `,
+`,
       }),
     ],
     target: "node",
