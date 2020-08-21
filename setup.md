@@ -1,11 +1,13 @@
 # Coffeebot Setup
 
-Coffeebot runs as a Google Appscript script. This means you wil need a google (ie gmail) account to run coffeebot. To set up coffeebot you'll need to do 3 things: 
+Coffeebot runs as a Google Appscript script. This means you wil need a google (ie gmail) account to run coffeebot. To set up coffeebot you'll follow a few easy steps: 
 
-1. Set up a Google Sheet spreadsheet with the fields that Coffeebot expects
+1. Create a new Google Sheet spreadsheet
 2. Copy-paste the script into that spreadsheets script-editor
-3. Run the script
-4. Optionally, set a timer to run coffeebot automatically
+3. Run the script to create the correct fields in the spreadsheet
+4. Fill in your info into the spreadsheet
+5. Run coffeebot!
+6. Optionally, set a timer to run coffeebot automatically
 
 Here's a detailed walkthrough of how to do those things:
 
@@ -18,40 +20,22 @@ Here's a detailed walkthrough of how to do those things:
 
 2. Rename the spreadsheet from "Untitled spreadsheet" to whatever you like-- perhaps "Coffeebot"
 
-3. Fill out the cells to match the template below:   
-
-![Example spreadsheet](example_coffeebot_spreadsheet.png "Coffeebot Template")
-
-You can name the fields whatever you wish (ie, you can write "Name" instead of "Hello my name is") but the script expects all of that information to be present in that order so it is important that you don't change the order of any of the columns or delete columns.
-
-Replace the example addresses with your email and the email of a friend so that when you run coffeebot you can confirm that you received the email.
-
-4. Rename the sheet from "Sheet1" to "Signup"
-    1. The name of the sheet is on a tab in the lower left corner
-
-Coffeebot expects the sign up sheet to be named "Signup" (spelled exactly that way, starting with a capital letter).
-
 ## Add the coffeebot script
 
 1. Click the "Tools" button in the toolbar, near the top of the spreadsheet
 2. Select "Script Editor" from the drop down menu. This will open a new window.
 3. Rename the script from "Untitled project" to whatever you like, perhaps "Coffeebot Script"
 3. Delete the example script, and replace it by copy-pasting the coffeebot script:
-    1. Open src/coffeebot.js 
+    1. Open [dist/main.js](dist/main.js)
     2. Either highlight & copy the entire script, or click the "Copy file contents" clipboard icon in the upper right
     3. Paste into script editor 
-    4. Remove the last few lines, starting with `module.exports = {` through the end of the file. These lines are necessary for our tests to run, but unnecessary for the script. 
 4. Save the script (either by hitting cmd+S or by choosing "Save" from the "File" dropdown)
 
-## Run coffeebot 
+## Generate spreadsheet field names with coffeebot
 
 1. In the script editor page, click the "Run" button in the toolbar.
-2. Mouse over "Run function" in the drop down; you will see a long list of functions appear in a secondary drop-down to the right. 
-
-Coffeebot runs in two steps to help make it easier to debug in case anything goes wrong. The first step is generating pairings for participants, and the second step is sending emails based on those pairings. We'll need to run each of those two functions. The two functions we need to run show up at the bottom of the list of all functions.
-
-3. Select `generateNextPairings` from the "Run function" secondary drop-down. It is second-to-last in the list.
-
+2. Mouse over "Run function" in the drop down; you will see three functions appear in a secondary drop-down to the right. 
+3. Click on the first one; `setupSignupSheet`.
 4. You will get a notification reading "Authorization required". 
 
 This script will need to read and write the spreadsheets you set up, and send emails from your email account, so you need to explicitly give it permission to do that.
@@ -59,13 +43,43 @@ This script will need to read and write the spreadsheets you set up, and send em
 If you feel uncomfortable granting this script those permissions, you could create a new gmail account (they're free, and you can have as many as you like) and set up coffeebot to run on that dedicated gmail account to isolate it from any other data you may have in your google account. If you are a programmer familiar with javascript you could also read the script to verify that it only reads / writes this coffeebot spreadsheet and only sends emails relevant to coffeebot.
 
 5. Hit "Review Permissions", and then hit "Allow".
-6. If you look at the "Next Pairings" sheet you should now see that the two users are paired for an upcoming coffeechat.
+6. If you go back to the spreadsheet, you will see that there is a new sheet named "Signup" that has some field names populated.
+
+## Populate the spreadsheet
+
+Here is what each of the fields is used for:
+- name: used at the top of the email to address the person receiving the email
+- email: coffeebot sends the message to this address
+- timezone: included in the email; the intention is to provide the participants more context for scheduling their coffeechat
+- snooze until (YYYY/MM/DD): lets participants pause their participation in coffeebot until the specified date. 
+- cadence: specifies how often participants want to participate. The default cadence is 1. Coffeebot bases the cadence off of the assumption that it runs weekly, so if a user sets their cadence to 2 it means they'd like to participate every-other-week, if they set it to 3 it means they'll be included every third week.
+- topics: included in the email as a list of topics that each participant is interested in. These aren't meant to be a prescriptive list of what the coffeechat must be about, but are meant as a possible starting point.
+
+You'll need to populate at least two users to test out coffeebot; use your email address and the email address of a friend so that you can confirm that you received the coffeebot email when you run it.
+
+You can name the fields whatever you wish (ie, you can write "Hello my name is" instead of "NAME") but the script expects all of that information to be present in that order so it is important that you don't change the order of any of the columns or delete columns.
+
+Here's how our version of the spreadsheet looks:
+![Example spreadsheet](example_coffeebot_spreadsheet.png "Coffeebot Template")
+
+If you'd like to replicate our look-and-feel, here is how it is configured:
+- the headings are in Lobster, size 14 bold
+- the body is in Inconsolata, size 12
+- the hex codes for the column colors left-to-right are: 336699, 2A9D8F, E9C46A, F4A261, E76F51, F39A9D
+
+## Run coffeebot 
+
+Coffeebot runs in two steps to help make it easier to debug in case anything goes wrong. The first step is generating pairings for participants, and the second step is sending emails based on those pairings. We'll need to run each of those two functions. The two functions we need to run show up at the bottom of the list of all functions.
+
+1. In the script editor page, click the "Run" button in the toolbar, and select `generateNextPairings` from the "Run function" secondary drop-down.
+
+2. If you look at the spreadsheet, you'll see a new sheet called "Next Pairings". It should now show that the two users are paired for an upcoming coffeechat.
 
 If there is an even number of people, everyone is paired up in a group of two. If there is an odd number of people, coffeebot creates one group of three in addition to all the pairs.
 
-7. Go back to the script editor, and select `sendEmails` from the "Run function" secondary drop-down. It is last in the list.
+3. Go back to the script editor, and select `sendEmails` from the "Run function" secondary drop-down.
 
-8. If you replaced the example email addresses with your email address and a friend's email address, both of you should now have an email in your inbox. It looks like this:
+4. If you replaced the example email addresses with your email address and a friend's email address, both of you should now have an email in your inbox. It looks like this:
 
 ```
 Hey Évariste Galois & Ada Lovelace!
@@ -105,3 +119,26 @@ If you'd like to run coffeebot automatically at regular intervals, you can set i
     7. Hit "Save" to create the trigger.
 5. Hit the "+ Add Trigger" button in the lower right, and repeat step 4, but for the "sendEmails" function. Be sure to schedule the `sendEmails` function to run at a time later than the `generateNextPairings` function.
 
+
+
+
+
+
+
+
+
+DELETE BELOW THIS
+
+
+3. Fill out the cells to match the template below:   
+
+![Example spreadsheet](example_coffeebot_spreadsheet.png "Coffeebot Template")
+
+You can name the fields whatever you wish (ie, you can write "Name" instead of "Hello my name is") but the script expects all of that information to be present in that order so it is important that you don't change the order of any of the columns or delete columns.
+
+Replace the example addresses with your email and the email of a friend so that when you run coffeebot you can confirm that you received the email.
+
+4. Rename the sheet from "Sheet1" to "Signup"
+    1. The name of the sheet is on a tab in the lower left corner
+
+Coffeebot expects the sign up sheet to be named "Signup" (spelled exactly that way, starting with a capital letter).
