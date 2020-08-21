@@ -29,3 +29,5 @@ Running coffeebot is a two-stage process:
 **Making Changes**
 
 See [DEVELOPING](./DEVELOPING.md) for information on extending/customizing Coffeebot.
+
+We are not currently accepting PRs or supporting filed issues at this time. However, feel free to fork this repo and modify it to suit your needs.

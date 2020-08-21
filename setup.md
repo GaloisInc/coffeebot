@@ -112,33 +112,9 @@ If you'd like to run coffeebot automatically at regular intervals, you can set i
     1. "function to run" should be `generateNextPairings`
     2. leave "which deployment should run" as is
     3. "select event source" should be "Time-driven". Selecting this option will reveal some additional fields. 
-    4. "select type of time based trigger". Set this to however often you want to run coffeebot (ie "week timer").
+    4. "select type of time based trigger". You can set this to be however often you like, but the "cadence" feature assumes a weekly cadence, so using the "week timer" is recommended.
     5. Configure day of the week & time of day as you like.
         You can set it to run at some day / time in the near future to test the functionality, and then reset it to whichever date and time you truly want to use.
     6. You can leave "failure notification settings" as is, or set it to "Notify me immediately".
     7. Hit "Save" to create the trigger.
 5. Hit the "+ Add Trigger" button in the lower right, and repeat step 4, but for the "sendEmails" function. Be sure to schedule the `sendEmails` function to run at a time later than the `generateNextPairings` function.
-
-
-
-
-
-
-
-
-
-DELETE BELOW THIS
-
-
-3. Fill out the cells to match the template below:   
-
-![Example spreadsheet](example_coffeebot_spreadsheet.png "Coffeebot Template")
-
-You can name the fields whatever you wish (ie, you can write "Name" instead of "Hello my name is") but the script expects all of that information to be present in that order so it is important that you don't change the order of any of the columns or delete columns.
-
-Replace the example addresses with your email and the email of a friend so that when you run coffeebot you can confirm that you received the email.
-
-4. Rename the sheet from "Sheet1" to "Signup"
-    1. The name of the sheet is on a tab in the lower left corner
-
-Coffeebot expects the sign up sheet to be named "Signup" (spelled exactly that way, starting with a capital letter).
