@@ -6,7 +6,11 @@ Introducing :coffee: :robot: Coffeebot :robot: :coffee:, a bot for randomly pair
 
 ## :coffee: How's it work? :coffee:
 
-Coffeebot is opt-in. Everyone who would like to participate can sign up using a GoogleSheet (see [setup](./setup.md) for instructions on how to set this up if you have not created one yet). Coffeebot will run on whatever cadence was configured in [setup](./setup.md) pairing people up and sending each participant an email letting them know who they have been scheduled to chat with, along with an optional recommendation of topics to chat about. Participants can then find a time that week to schedule a hangout for a 5-30 minute coffee chat. 
+Everyone who would like to participate can sign up using a GoogleSheet. Coffeebot runs weekly pairing people up and sending each participant an email letting them know who they have been scheduled to chat with, along with an optional recommendation of topics to chat about. Participants can then find a time that week to schedule a hangout for a half hour coffee chat. 
+
+## Run your own coffeebot!
+
+Follow the instructions in [setup](./setup.md) to set up your own coffeebot instance. No programming knowledge or experience necessary!
 
 **Explanation of the Sheets**
 
@@ -25,3 +29,5 @@ Running coffeebot is a two-stage process:
 **Making Changes**
 
 See [DEVELOPING](./DEVELOPING.md) for information on extending/customizing Coffeebot.
+
+We are not currently accepting PRs or supporting filed issues at this time. However, feel free to fork this repo and modify it to suit your needs.
