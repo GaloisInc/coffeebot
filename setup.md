@@ -29,7 +29,7 @@ Here's a detailed walkthrough of how to do those things:
     1. Open [dist/main.js](dist/main.js)
     2. Either highlight & copy the entire script, or click the "Copy file contents" clipboard icon in the upper right
     3. Paste into script editor 
-4. Save the script (either by hitting cmd+S or by choosing "Save" from the "File" dropdown)
+4. Save the script (by choosing "Save" from the "File" dropdown)
 
 ## Generate spreadsheet field names with coffeebot
 
