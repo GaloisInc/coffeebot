@@ -98,7 +98,7 @@ const PAIRING_SHEET_NAME = 'Signup';
 const NEXT_PAIRINGS_SHEET_NAME = 'Next Pairings';
 const RECORD_SHEET_NAME = 'Past Pairings';
 const RECORD_SHEET_HEADINGS = ['Pairing Date', 'Paired Emails']
-const MAX_PAIRING_TRIES = 3;
+const MAX_PAIRING_TRIES = 20;
 const EMAIL_SEPARATOR = ',';
 
 const PAIRING_COLUMNS_MAP = {
