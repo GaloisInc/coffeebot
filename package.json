@@ -1,6 +1,6 @@
 {
   "name": "coffeebot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Simple script to use in Google Sheets to pair up particpants for \"coffeebot\" visit to get to know each other",
   "private": true,
   "scripts": {

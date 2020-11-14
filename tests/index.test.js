@@ -173,5 +173,10 @@ describe('Coffeebot', () => {
       const snooze = `${today.getFullYear()}/${today.getMonth()+1}/${today.getDate()+1}`;
       expect(shouldSnooze(today, snooze)).toEqual(true);
     });
+
+    it('should snooze if snoozed through to next year', () => {
+      const snooze = `${today.getFullYear() + 1}/${today.getMonth()}/${today.getDate()}`;//`2021/06/01`;
+      expect(shouldSnooze(today, snooze)).toEqual(true);
+    });
   });
 });

@@ -234,10 +234,14 @@ function getToday() {
 function shouldSnooze(today, snooze) {
   if (snooze) {
     const snoozeDate = new Date(snooze);
-
-    return today.getFullYear() <= snoozeDate.getFullYear() &&
-            today.getMonth() <= snoozeDate.getMonth() &&
-            today.getDate() <= snoozeDate.getDate();
+    
+    if (today.getFullYear() < snoozeDate.getFullYear()) return true;
+    if (today.getFullYear() > snoozeDate.getFullYear()) return false;
+    // okay, so we're snoozing until some time this year...
+    if (today.getMonth() < snoozeDate.getMonth()) return true;
+    if (today.getMonth() > snoozeDate.getMonth()) return false;
+    // okay, so we're snoozing until some time this month...
+   if (today.getDate() <= snoozeDate.getDate()) return true;
   }
 
   return false;
